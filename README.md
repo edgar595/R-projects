@@ -31,3 +31,10 @@ Welcome to my R projects repository! This repository contains various data analy
 - **Description**: This project focuses on analyzing health-related data and visualizing insights using a Shiny dashboard. It includes data visualization, statistical analysis, and interactive features for exploring health trends.
 - **Technologies**: R, Shiny, Data Visualization
 - **Folder**: `health-analysis-dashboard`
+
+### 5. Football Analytics with Elo Ratings
+
+- **Objective**: Analyze football match data and calculate Elo ratings for teams in the English Premier League.
+- **Description**: This project involves analyzing match data from the English Premier League and calculating Elo ratings for teams. Elo ratings are used to quantify the skill levels of teams and predict match outcomes.
+- **Technologies**: R, Shiny, Elo Rating System
+- **Folder**: `football-analytics-elo`
