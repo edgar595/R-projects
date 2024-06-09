@@ -1,0 +1,4 @@
+"0","austin_data <- train_raw %>%"
+"0","  select(description, priceRange) %>%"
+"0","  mutate(priceRange = parse_number(priceRange) + 100000) %>%"
+"0","  na.omit()"

@@ -1,0 +1,6 @@
+"0","# Rename TARGET to DefaultStatus"
+"0","application_train <- application_train %>%"
+"0","  rename(DefaultStatus = TARGET) %>%"
+"0","  mutate(DefaultStatus = as.factor(DefaultStatus)) %>%"
+"0","  rename(Gender = CODE_GENDER)"
+"0",""

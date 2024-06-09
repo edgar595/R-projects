@@ -1,0 +1,6 @@
+"0","# Define the features"
+"0","domain_features <- c('AMT_CREDIT', 'DAYS_BIRTH')"
+"0",""
+"0",""
+"0","# Plot the distribution"
+"0","plot_distribution(application_train, domain_features)"

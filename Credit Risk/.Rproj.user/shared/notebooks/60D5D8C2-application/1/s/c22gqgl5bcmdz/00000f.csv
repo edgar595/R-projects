@@ -1,0 +1,2 @@
+"0","application_train <- read.csv(""data/application_train.csv"")"
+"0","application_test <- read.csv(""data/application_test.csv"")"

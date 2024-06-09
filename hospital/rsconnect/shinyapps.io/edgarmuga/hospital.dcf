@@ -1,0 +1,14 @@
+name: hospital
+title: hospital
+username:
+account: edgarmuga
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 11901472
+bundleId: 8559635
+url: https://edgarmuga.shinyapps.io/hospital/
+when: 1714484056.48106
+lastSyncTime: 1714484056.48108
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: global.R|kidshealth.html|kidshealth.Rmd|sample.png|sample2.png|sample3.png|sample4.png

@@ -1,0 +1,5 @@
+"0","rf_spec %>%"
+"0","  set_engine(""ranger"", importance = ""permutation"") %>%"
+"0","  fit(DefaultStatus ~ ., data = juice(prepared_recipe)) %>%"
+"0","  vip(geom = ""point"")"
+"0",""

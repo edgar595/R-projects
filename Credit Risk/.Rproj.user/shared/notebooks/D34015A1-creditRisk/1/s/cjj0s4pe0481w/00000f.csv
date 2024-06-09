@@ -1,0 +1,18 @@
+"0","application_train <- application_train %>% as.tibble()"
+"2","Warning:"
+"2"," [38;5;232m`as.tibble()` was deprecated in tibble 2.0.0.
+[36mℹ[38;5;232m Please use `as_tibble()` instead.
+[36mℹ[38;5;232m The signature and semantics have changed, see `?as_tibble`.
+[90mThis warning is displayed once every 8 hours.[38;5;232m
+[90mCall `lifecycle::last_lifecycle_warnings()` to see where this warning was[38;5;232m
+[90mgenerated.[38;5;232m[39m
+"
+"0","application_test <- application_test %>% as.tibble()"
+"0","bureau <- bureau %>% as.tibble()"
+"0","bureau_balance <- bureau_balance %>% as.tibble()"
+"0","credit_card_balance <- credit_card_balance %>% as.tibble()"
+"0","HomeCredit_columns_description <- HomeCredit_columns_description %>% as.tibble()"
+"0","install_payments <- install_payments %>% as.tibble()"
+"0","POS_CASH_balance <- POS_CASH_balance %>%as.tibble()"
+"0","previous_application <- previous_application %>% as.tibble()"
+"0","sample_submission <- sample_submission %>% as.tibble()"

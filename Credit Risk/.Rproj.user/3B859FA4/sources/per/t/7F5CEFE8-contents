@@ -1,0 +1,668 @@
+---
+title: "application"
+author: "edgar M"
+date: "2024-06-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+```{r}
+library(tidyverse)
+library(gridExtra)
+library(data.table)
+library(tidymodels)
+library(themis)
+```
+
+
+
+```{r imports}
+application_train <- read.csv("data/application_train.csv")
+application_test <- read.csv("data/application_test.csv")
+```
+
+
+
+```{r}
+application_train <- application_train %>%
+  as.tibble()
+
+application_test <- application_test %>%
+  as.tibble()
+```
+
+
+
+```{r}
+dim(application_train)
+dim(application_test)
+```
+
+```{r}
+application_train %>%
+  count(TARGET)
+
+```
+
+```{r}
+application_train %>%
+  count(TARGET) %>%
+  mutate(percentage = n / sum(n) * 100) %>%
+  ggplot(aes(x = as.factor(TARGET), y = percentage, fill = as.factor(TARGET))) +
+  geom_bar(stat = "identity") +
+  labs(x = "Target", y = "Percentage", title = "Percentage of Target Variable") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_fill_manual(values = c("0" = "steelblue", "1" = "red"), name = "TARGET") +
+  theme_minimal()
+```
+
+
+```{r}
+# Define the plotting function
+plot_distribution <- function(df, features) {
+  plots <- list()
+  
+  t1 <- df %>% filter(TARGET != 0)
+  t0 <- df %>% filter(TARGET == 0)
+  
+  for (feature in features) {
+    if (feature != 'TARGET') {
+      p <- ggplot() +
+        geom_density(data = t1, aes_string(x = feature), bw = 0.5, color = 'red', fill = 'red', alpha = 0.3) +
+        geom_density(data = t0, aes_string(x = feature), bw = 0.5, color = 'blue', fill = 'blue', alpha = 0.3) +
+        labs(title = feature, x = feature, y = 'Density') +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12),
+              axis.text.y = element_text(size = 12),
+              plot.title = element_text(size = 14, face = "bold"))
+      
+      plots[[length(plots) + 1]] <- p
+    }
+  }
+  
+  # Arrange plots in a grid
+  do.call("grid.arrange", c(plots, ncol = 2))
+}
+```
+
+
+```{r}
+# Define the features
+domain_features <- c('AMT_CREDIT', 'DAYS_BIRTH')
+
+
+# Plot the distribution
+plot_distribution(application_train, domain_features)
+```
+
+Categorical Variables
+
+```{r}
+# Select columns of type character
+character_cols <- application_train[, sapply(application_train, is.character)]
+
+# Calculate the number of unique values for each column
+num_unique <- sapply(character_cols, function(col) length(unique(col)))
+
+# Create a data frame with column names and their corresponding number of unique values
+unique_values_df <- data.frame(variable = names(num_unique), num_unique = num_unique)
+
+# Sort the data frame by the number of unique values
+unique_values_df <- unique_values_df[order(unique_values_df$num_unique), ]
+
+# Drop the "variable" column
+unique_values_df <- subset(unique_values_df, select = -variable)
+
+print(unique_values_df)
+```
+
+
+```{r}
+
+application_train <- application_train %>%
+  mutate(NAME_FAMILY_STATUS = case_when(
+    NAME_FAMILY_STATUS == "Single / not married" ~ "Single",
+    NAME_FAMILY_STATUS == "Civil marriage" ~ "Married",
+    TRUE ~ NAME_FAMILY_STATUS),
+  NAME_HOUSING_TYPE = case_when(
+    NAME_HOUSING_TYPE == "House / apartment" ~ "House apartment",
+    TRUE ~ NAME_HOUSING_TYPE),
+  NAME_TYPE_SUITE = case_when(
+    NAME_TYPE_SUITE == "" ~ "Unknown",
+    NAME_TYPE_SUITE == "Other_A" ~ "Unknown",
+    NAME_TYPE_SUITE == "Other_B" ~ "Unknown",
+    TRUE ~ NAME_TYPE_SUITE),
+  HOUSETYPE_MODE = case_when(
+    HOUSETYPE_MODE == "" ~ "Unknown",
+    TRUE ~ HOUSETYPE_MODE
+  ),
+  NAME_INCOME_TYPE = ifelse(NAME_INCOME_TYPE %in% c("Businessman", "Maternity leave"), "Working", NAME_INCOME_TYPE),
+  OCCUPATION_TYPE = case_when(
+    OCCUPATION_TYPE == "" ~ "Unknown",
+    TRUE ~ OCCUPATION_TYPE),
+  ORGANIZATION_TYPE = case_when(
+    ORGANIZATION_TYPE %in% c("Business Entity Type 1", "Business Entity Type 2", "Business Entity Type 3") ~ "Business Entity",
+    ORGANIZATION_TYPE %in% c("Industry: type 1", "Industry: type 2", "Industry: type 3", "Industry: type 4", "Industry: type 5", "Industry: type 6", "Industry: type 7", "Industry: type 8", "Industry: type 9", "Industry: type 10", "Industry: type 11", "Industry: type 12", "Industry: type 13") ~ "Industry",
+    ORGANIZATION_TYPE %in% c("Trade: type 1", "Trade: type 2", "Trade: type 3", "Trade: type 4", "Trade: type 5", "Trade: type 6", "Trade: type 7") ~ "Trade",
+    ORGANIZATION_TYPE %in% c("Transport: type 1", "Transport: type 2", "Transport: type 3", "Transport: type 4") ~ "Transport",
+    ORGANIZATION_TYPE == "Mobile" ~ "Telecom",
+    ORGANIZATION_TYPE %in% c("Kindergarten", "School", "University") ~ "Education",
+    ORGANIZATION_TYPE == "Security Ministries" ~ "Security",
+    TRUE ~ ORGANIZATION_TYPE))
+```
+
+```{r}
+application_test <- application_test %>%
+  mutate(NAME_FAMILY_STATUS = case_when(
+    NAME_FAMILY_STATUS == "Single / not married" ~ "Single",
+    NAME_FAMILY_STATUS == "Civil marriage" ~ "Married",
+    TRUE ~ NAME_FAMILY_STATUS),
+    NAME_HOUSING_TYPE = case_when(
+      NAME_HOUSING_TYPE == "House / apartment" ~ "House apartment",
+      TRUE ~ NAME_HOUSING_TYPE),
+    NAME_TYPE_SUITE = case_when(
+      NAME_TYPE_SUITE == "" ~ "Unknown",
+      NAME_TYPE_SUITE == "Other_A" ~ "Unknown",
+      NAME_TYPE_SUITE == "Other_B" ~ "Unknown",
+      TRUE ~ NAME_TYPE_SUITE),
+    HOUSETYPE_MODE = case_when(
+      HOUSETYPE_MODE == "" ~ "Unknown",
+      TRUE ~ HOUSETYPE_MODE
+    ),
+    NAME_INCOME_TYPE = ifelse(NAME_INCOME_TYPE %in% c("Businessman", "Maternity leave"), "Working", NAME_INCOME_TYPE),
+    OCCUPATION_TYPE = case_when(
+      OCCUPATION_TYPE == "" ~ "Unknown",
+      TRUE ~ OCCUPATION_TYPE),
+    ORGANIZATION_TYPE = case_when(
+      ORGANIZATION_TYPE %in% c("Business Entity Type 1", "Business Entity Type 2", "Business Entity Type 3") ~ "Business Entity",
+      ORGANIZATION_TYPE %in% c("Industry: type 1", "Industry: type 2", "Industry: type 3", "Industry: type 4", "Industry: type 5", "Industry: type 6", "Industry: type 7", "Industry: type 8", "Industry: type 9", "Industry: type 10", "Industry: type 11", "Industry: type 12", "Industry: type 13") ~ "Industry",
+      ORGANIZATION_TYPE %in% c("Trade: type 1", "Trade: type 2", "Trade: type 3", "Trade: type 4", "Trade: type 5", "Trade: type 6", "Trade: type 7") ~ "Trade",
+      ORGANIZATION_TYPE %in% c("Transport: type 1", "Transport: type 2", "Transport: type 3", "Transport: type 4") ~ "Transport",
+      ORGANIZATION_TYPE == "Mobile" ~ "Telecom",
+      ORGANIZATION_TYPE %in% c("Kindergarten", "School", "University") ~ "Education",
+      ORGANIZATION_TYPE == "Security Ministries" ~ "Security",
+      TRUE ~ ORGANIZATION_TYPE),
+    NAME_EDUCATION_TYPE = case_when(
+      NAME_EDUCATION_TYPE == "Secondary / secondary special" ~ "Higher Secondary",
+      TRUE ~ NAME_EDUCATION_TYPE
+    ))
+
+```
+
+
+
+```{r}
+application_train %>%
+  group_by(CODE_GENDER) %>%
+  mutate(total_count = n()) %>%  
+  ungroup() %>%
+  group_by(TARGET, CODE_GENDER) %>%
+  summarise(n = n(), total_count = first(total_count), .groups = 'drop') %>%
+  mutate(percentage = n / total_count * 100) %>%
+  ggplot(aes(x = CODE_GENDER, y = percentage, fill = as.factor(TARGET))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = sprintf("%.1f%%", percentage)), 
+            position = position_dodge(width = 1), 
+            vjust = -0.5, size = 3) +
+  labs(title = "Distribution of TARGET by Gender",
+       x = "Gender",
+       y = "Percentage",
+       fill = "TARGET") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), labels = c("0" = "Non-default", "1" = "Default")) +
+  theme_minimal()
+```
+
+
+
+```{r}
+
+application_train %>%
+  group_by(NAME_CONTRACT_TYPE) %>%
+  mutate(total_count_contract = n()) %>%  
+  ungroup() %>%
+  group_by(TARGET, NAME_CONTRACT_TYPE) %>%
+  summarise(n = n(), total_count_contract = first(total_count_contract), .groups = 'drop') %>%
+  mutate(percentage_contract = n / total_count_contract * 100) %>%
+  ggplot(aes(x = NAME_CONTRACT_TYPE, y = percentage_contract, fill = as.factor(TARGET))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = sprintf("%.1f%%", percentage_contract)), 
+            position = position_dodge(width = 1), 
+            vjust = -0.5, size = 3) + 
+  labs(title = "Distribution of Default Status by Contract Type",
+       x = "Contract Type",
+       fill = "TARGET") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), labels = c("0" = "Non-default", "1" = "Default")) +
+  theme_minimal() 
+
+```
+
+
+
+```{r}
+# Your data transformation and plotting code
+application_train %>%
+  group_by(NAME_FAMILY_STATUS) %>%
+  mutate(total_count_family = n()) %>%  
+  ungroup() %>%
+  group_by(TARGET, NAME_FAMILY_STATUS) %>%
+  summarise(n = n(), total_count_family = first(total_count_family), .groups = 'drop') %>%
+  mutate(percentage_family = n / total_count_family * 100) %>%
+  ggplot(aes(x = NAME_FAMILY_STATUS, y = percentage_family, fill = as.factor(TARGET))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = sprintf("%.1f%%", percentage_family)), 
+            position = position_dodge(width = 1), 
+            vjust = -0.5, size = 3) + 
+  labs(title = "Distribution of TARGET by Family Status",
+       x = "Family Status",
+       y = NULL,
+       fill = "TARGET") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), labels = c("0" = "Non-default", "1" = "Default")) +
+  theme_minimal() 
+
+```
+
+
+```{r}
+application_train %>%
+  group_by(OCCUPATION_TYPE) %>%
+  mutate(total_count_occupation = n()) %>%  
+  ungroup() %>%
+  group_by(TARGET, OCCUPATION_TYPE) %>%
+  summarise(n = n(), total_count_occupation = first(total_count_occupation), .groups = 'drop') %>%
+  mutate(percentage_occupation = n / total_count_occupation * 100) %>%
+  ggplot(aes(x = OCCUPATION_TYPE, y = percentage_occupation, fill = as.factor(TARGET))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = sprintf("%.1f%%", percentage_occupation)), 
+            position = position_dodge(width = 1), 
+            vjust = -0.5, size = 3) +  # Adjust the position and size of text labels
+  labs(title = "Distribution of defaulter status by Occupation Type",
+       x = "Occupation",
+       y = "Percentage",
+       fill = "TARGET") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), labels = c("0" = "Non-default", "1" = "Default")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")  
+
+```
+
+
+
+
+
+```{r}
+# List of categorical variables
+categorical_vars <- c("NAME_CONTRACT_TYPE", "FLAG_OWN_CAR", "FLAG_OWN_REALTY", "CODE_GENDER", 
+                      "EMERGENCYSTATE_MODE", "HOUSETYPE_MODE", "NAME_EDUCATION_TYPE", 
+                      "FONDKAPREMONT_MODE", "NAME_FAMILY_STATUS", "NAME_HOUSING_TYPE", 
+                      "WEEKDAY_APPR_PROCESS_START", "NAME_TYPE_SUITE", "NAME_INCOME_TYPE", 
+                      "WALLSMATERIAL_MODE", "OCCUPATION_TYPE", "ORGANIZATION_TYPE")
+
+# Create an empty data.table to store results
+results_dt <- data.table(
+  Variable = character(),
+  chi_squared_test = numeric(),
+  df = numeric(),
+  p_value = numeric()
+)
+
+# Loop through each categorical variable
+for (var in categorical_vars) {
+  # Create contingency table
+  cont_table <- application_train %>%
+    select(TARGET, !!sym(var)) %>%
+    table()
+  
+  # Perform chi-square test
+  chi_test_result <- chisq.test(cont_table)
+  
+  # Store results in the data.table
+  results_dt <- rbind(results_dt, data.table(
+    Variable = var,
+    chi_squared_test = chi_test_result$statistic,
+    df = chi_test_result$parameter,
+    p_value = chi_test_result$p.value
+  ))
+}
+
+# Print the results data.table
+print(results_dt)
+
+```
+
+
+```{r}
+application_train <- application_train %>%
+  mutate(DOCUMENTS_MISSING = rowSums(select(., starts_with("FLAG_DOCUMENT_")))) %>%
+  select(-starts_with("FLAG_DOCUMENT_"))
+
+application_test <- application_test %>%
+  mutate(DOCUMENTS_MISSING = rowSums(select(., starts_with("FLAG_DOCUMENT_")))) %>%
+  select(-starts_with("FLAG_DOCUMENT_"))
+
+
+application_train
+application_test
+```
+
+
+```{r}
+application_train <- application_train %>%
+  mutate(AGE = round(abs(DAYS_BIRTH / (-365))),
+         YEARS_EMPLOYED = round(abs(DAYS_EMPLOYED / 365)),
+         DEBT_TO_INCOME_RATIO = AMT_CREDIT / AMT_INCOME_TOTAL,
+         INCOME_TO_CREDIT = AMT_INCOME_TOTAL / AMT_CREDIT,
+         ) %>%
+  mutate(MEAN_EXT_SOURCE = rowMeans(select(., starts_with("EXT_SOURCE_")), na.rm = TRUE)) %>%
+  select(-starts_with("EXT_SOURCE_")) %>%
+  filter(CODE_GENDER != "XNA")
+
+
+application_test <- application_test %>%
+  mutate(AGE = round(abs(DAYS_BIRTH / (-365))),
+         YEARS_EMPLOYED = round(abs(DAYS_EMPLOYED / 365)),
+         DEBT_TO_INCOME_RATIO = AMT_CREDIT / AMT_INCOME_TOTAL,
+         INCOME_TO_CREDIT = AMT_INCOME_TOTAL / AMT_CREDIT
+  ) %>%
+  mutate(MEAN_EXT_SOURCE = rowMeans(select(., starts_with("EXT_SOURCE_")), na.rm = TRUE)) %>%
+  select(-starts_with("EXT_SOURCE_"))
+```
+
+
+
+```{r}
+
+# Columns to drop
+
+AMT_REQ_CREDIT <- c('AMT_REQ_CREDIT_BUREAU_HOUR', 'AMT_REQ_CREDIT_BUREAU_DAY', 'AMT_REQ_CREDIT_BUREAU_YEAR', 'AMT_REQ_CREDIT_BUREAU_WEEK', 'AMT_REQ_CREDIT_BUREAU_MON', 'AMT_REQ_CREDIT_BUREAU_QRT')
+
+# For application_train dataframe
+application_train <- application_train %>%
+  select(-any_of(AMT_REQ_CREDIT))
+
+application_test <- application_test %>%
+  select(-any_of(AMT_REQ_CREDIT))
+```
+
+
+```{r}
+# Columns to perform t-tests on
+new_numeric_features <- c("AGE", "DEBT_TO_INCOME_RATIO", "INCOME_TO_CREDIT")
+
+# Perform one-sample t-test for each numeric feature
+t_test_results <- lapply(new_numeric_features, function(feature) {
+  t_test <- t.test(application_train[[feature]])
+  return(t_test)
+})
+
+# Print the results
+t_test_results
+
+```
+
+
+```{r}
+application_train <- application_train %>%
+  select(-ELEVATORS_AVG, -ENTRANCES_AVG, -OWN_CAR_AGE, -BASEMENTAREA_AVG, 
+         -COMMONAREA_AVG, -YEARS_BUILD_AVG, -YEARS_BEGINEXPLUATATION_AVG, 
+         -FLOORSMAX_AVG, -FLOORSMIN_AVG, -LANDAREA_AVG, -LIVINGAPARTMENTS_AVG, 
+         -LIVINGAREA_AVG, -NONLIVINGAPARTMENTS_AVG, -NONLIVINGAREA_AVG, 
+         -APARTMENTS_MODE, -BASEMENTAREA_MODE, -YEARS_BEGINEXPLUATATION_MODE, 
+         -YEARS_BUILD_MODE, -COMMONAREA_MODE, -ELEVATORS_MODE,
+         -ENTRANCES_MODE, -FLOORSMAX_MODE, -FLOORSMIN_MODE, -APARTMENTS_AVG,
+         -LANDAREA_MODE, -LIVINGAPARTMENTS_MODE, -LIVINGAREA_MODE, -FONDKAPREMONT_MODE,
+         -NONLIVINGAPARTMENTS_MODE, -NONLIVINGAREA_MODE, -APARTMENTS_MEDI, 
+         -BASEMENTAREA_MEDI, -YEARS_BEGINEXPLUATATION_MEDI, -YEARS_BUILD_MEDI, 
+         -COMMONAREA_MEDI, -ELEVATORS_MEDI, -ENTRANCES_MEDI, -FLOORSMAX_MEDI, 
+         -FLOORSMIN_MEDI, -LANDAREA_MEDI, -LIVINGAPARTMENTS_MEDI, -TOTALAREA_MODE,
+         -LIVINGAREA_MEDI, -NONLIVINGAPARTMENTS_MEDI, -NONLIVINGAREA_MEDI,
+         -HOUSETYPE_MODE, -WALLSMATERIAL_MODE, -EMERGENCYSTATE_MODE,
+         -DAYS_ID_PUBLISH)
+
+
+application_test <- application_test %>%
+  select(-ELEVATORS_AVG, -ENTRANCES_AVG, -OWN_CAR_AGE, -BASEMENTAREA_AVG, 
+         -COMMONAREA_AVG, -YEARS_BUILD_AVG, -YEARS_BEGINEXPLUATATION_AVG, 
+         -FLOORSMAX_AVG, -FLOORSMIN_AVG, -LANDAREA_AVG, -LIVINGAPARTMENTS_AVG, 
+         -LIVINGAREA_AVG, -NONLIVINGAPARTMENTS_AVG, -NONLIVINGAREA_AVG, 
+         -APARTMENTS_MODE, -BASEMENTAREA_MODE, -YEARS_BEGINEXPLUATATION_MODE, 
+         -YEARS_BUILD_MODE, -COMMONAREA_MODE, -ELEVATORS_MODE,
+         -ENTRANCES_MODE, -FLOORSMAX_MODE, -FLOORSMIN_MODE, -APARTMENTS_AVG,
+         -LANDAREA_MODE, -LIVINGAPARTMENTS_MODE, -LIVINGAREA_MODE, -FONDKAPREMONT_MODE,
+         -NONLIVINGAPARTMENTS_MODE, -NONLIVINGAREA_MODE, -APARTMENTS_MEDI, 
+         -BASEMENTAREA_MEDI, -YEARS_BEGINEXPLUATATION_MEDI, -YEARS_BUILD_MEDI, 
+         -COMMONAREA_MEDI, -ELEVATORS_MEDI, -ENTRANCES_MEDI, -FLOORSMAX_MEDI, 
+         -FLOORSMIN_MEDI, -LANDAREA_MEDI, -LIVINGAPARTMENTS_MEDI, -TOTALAREA_MODE,
+         -LIVINGAREA_MEDI, -NONLIVINGAPARTMENTS_MEDI, -NONLIVINGAREA_MEDI,
+         -HOUSETYPE_MODE, -WALLSMATERIAL_MODE, -EMERGENCYSTATE_MODE,
+         -DAYS_ID_PUBLISH)
+
+
+
+```
+
+
+
+```{r}
+
+application_train <- application_train %>%
+  mutate(MOBILE_PHONES = FLAG_WORK_PHONE + FLAG_PHONE + FLAG_MOBIL + FLAG_EMP_PHONE + FLAG_CONT_MOBILE,
+         OBS_CNT_SOCIAL_CIRCLE = OBS_30_CNT_SOCIAL_CIRCLE + OBS_60_CNT_SOCIAL_CIRCLE,
+         DEF_CNT_SOCIAL_CIRCLE = DEF_30_CNT_SOCIAL_CIRCLE + DEF_60_CNT_SOCIAL_CIRCLE) %>%
+  select(-FLAG_WORK_PHONE, -FLAG_PHONE, -FLAG_MOBIL, -FLAG_EMP_PHONE, -FLAG_CONT_MOBILE,
+         -DAYS_BIRTH,-DAYS_EMPLOYED, -DAYS_REGISTRATION, -OBS_30_CNT_SOCIAL_CIRCLE, 
+         -OBS_60_CNT_SOCIAL_CIRCLE, -DEF_30_CNT_SOCIAL_CIRCLE,-DEF_60_CNT_SOCIAL_CIRCLE,
+         -DAYS_LAST_PHONE_CHANGE)
+
+application_test <- application_test %>%
+  mutate(MOBILE_PHONES = FLAG_WORK_PHONE + FLAG_PHONE + FLAG_MOBIL + FLAG_EMP_PHONE + FLAG_CONT_MOBILE,
+         OBS_CNT_SOCIAL_CIRCLE = OBS_30_CNT_SOCIAL_CIRCLE + OBS_60_CNT_SOCIAL_CIRCLE,
+         DEF_CNT_SOCIAL_CIRCLE = DEF_30_CNT_SOCIAL_CIRCLE + DEF_60_CNT_SOCIAL_CIRCLE) %>%
+  select(-FLAG_WORK_PHONE, -FLAG_PHONE, -FLAG_MOBIL, -FLAG_EMP_PHONE, -FLAG_CONT_MOBILE,
+         -DAYS_BIRTH,-DAYS_EMPLOYED, -DAYS_REGISTRATION, -OBS_30_CNT_SOCIAL_CIRCLE, 
+         -OBS_60_CNT_SOCIAL_CIRCLE, -DEF_30_CNT_SOCIAL_CIRCLE,-DEF_60_CNT_SOCIAL_CIRCLE,
+         -DAYS_LAST_PHONE_CHANGE)
+
+```
+
+```{r}
+
+dim(application_test)
+dim(application_train)
+```
+
+
+```{r}
+# Replace the extreme values in `YEARS_EMPLOYED` with NA
+application_train$YEARS_EMPLOYED <- ifelse(application_train$YEARS_EMPLOYED == 1001, NA, application_train$YEARS_EMPLOYED)
+
+# Replace NA in `YEARS_EMPLOYED` with median value based on specific groups
+application <- application_train %>%
+  group_by(NAME_INCOME_TYPE, OCCUPATION_TYPE) %>%
+  mutate(YEARS_EMPLOYED = ifelse(is.na(YEARS_EMPLOYED),
+                                 median(YEARS_EMPLOYED, na.rm = TRUE), 
+                                 YEARS_EMPLOYED)) %>%
+  ungroup()
+
+```
+
+
+```{r}
+# Load necessary library for multiple imputation
+library(mice)
+
+# Impute missing values
+imputed_data <- mice(application_train[, c("AGE", "YEARS_EMPLOYED", "NAME_INCOME_TYPE", "OCCUPATION_TYPE", "AMT_INCOME_TOTAL")], 
+                     m = 5, 
+                     method = 'pmm', 
+                     maxit = 50, 
+                     seed = 500)
+
+# Complete the dataset with imputed values
+completed_data <- complete(imputed_data, 1)
+
+# Assign the imputed values back to the original dataset
+application_train$YEARS_EMPLOYED <- completed_data$YEARS_EMPLOYED
+
+# List of columns with missing values
+missing_cols <- c("AMT_ANNUITY", "AMT_GOODS_PRICE", "CNT_FAM_MEMBERS", 
+                  "MEAN_EXT_SOURCE", "OBS_CNT_SOCIAL_CIRCLE", "DEF_CNT_SOCIAL_CIRCLE")
+
+
+# Extract columns to impute along with relevant predictors
+impute_data <- application_train[, c(missing_cols, "AGE", "YEARS_EMPLOYED", 
+                                     "NAME_INCOME_TYPE", "OCCUPATION_TYPE", "AMT_INCOME_TOTAL")]
+
+# Perform multiple imputation
+imputed_data <- mice(impute_data, m = 5, method = 'pmm', maxit = 50, seed = 500)
+
+# Check imputation results
+summary(imputed_data)
+
+# Get the completed dataset for the first imputed set
+completed_data <- complete(imputed_data, 1)
+
+# Update the original dataset with imputed values for the specified columns
+application_train[missing_cols] <- completed_data[missing_cols]
+
+
+
+```
+
+```{r}
+# Replace the extreme values in `YEARS_EMPLOYED` with NA
+application_test$YEARS_EMPLOYED <- ifelse(application_test$YEARS_EMPLOYED == 1001, NA, application_test$YEARS_EMPLOYED)
+
+
+# Impute missing values
+imputed_data <- mice(application_test[, c("AGE", "YEARS_EMPLOYED", "NAME_INCOME_TYPE", "OCCUPATION_TYPE", "AMT_INCOME_TOTAL")], 
+                     m = 5, 
+                     method = 'pmm', 
+                     maxit = 50, 
+                     seed = 500)
+
+# Complete the dataset with imputed values
+completed_data <- complete(imputed_data, 1)
+
+# Assign the imputed values back to the original dataset
+application_test$YEARS_EMPLOYED <- completed_data$YEARS_EMPLOYED
+
+# List of columns with missing values
+missing_cols <- c("AMT_ANNUITY","MEAN_EXT_SOURCE", "OBS_CNT_SOCIAL_CIRCLE", "DEF_CNT_SOCIAL_CIRCLE")
+
+
+# Extract columns to impute along with relevant predictors
+impute_data <- application_test[, c(missing_cols, "AGE", "YEARS_EMPLOYED", 
+                                     "NAME_INCOME_TYPE", "OCCUPATION_TYPE", "AMT_INCOME_TOTAL")]
+
+# Perform multiple imputation
+imputed_data <- mice(impute_data, m = 5, method = 'pmm', maxit = 50, seed = 500)
+
+# Check imputation results
+summary(imputed_data)
+
+# Get the completed dataset for the first imputed set
+completed_data <- complete(imputed_data, 1)
+
+# Update the original dataset with imputed values for the specified columns
+application_test[missing_cols] <- completed_data[missing_cols]
+
+```
+
+
+```{r}
+# Rename TARGET to DefaultStatus
+application_train <- application_train %>%
+  rename(DefaultStatus = TARGET) %>%
+  mutate(DefaultStatus = as.factor(DefaultStatus)) %>%
+  rename(Gender = CODE_GENDER)
+
+```
+
+
+
+```{r}
+# Convert character columns to factors
+application_train <- application_train %>%
+  mutate_if(is.character, as.factor) %>%
+  mutate(DefaultStatus = as.factor(DefaultStatus))
+
+application_test <- application_test %>%
+  mutate_if(is.character, as.factor)%>%
+  rename(Gender = CODE_GENDER)
+
+```
+
+
+```{r}
+set.seed(123)
+
+application_boot <- bootstraps(application_train)
+
+
+# Define the recipe with undersampling
+application_rec <- recipe(DefaultStatus ~ ., data = application_train) %>%
+  update_role(SK_ID_CURR, new_role = "ID") %>%
+  step_other(NAME_TYPE_SUITE, NAME_INCOME_TYPE, NAME_EDUCATION_TYPE, NAME_FAMILY_STATUS, 
+             NAME_HOUSING_TYPE, ORGANIZATION_TYPE, OCCUPATION_TYPE, threshold = 0.3) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  step_downsample(DefaultStatus)
+
+```
+
+
+```{r}
+# Prepare the recipe
+prepared_recipe <- prep(application_rec)
+juice(prepared_recipe)
+
+```
+
+
+```{r}
+rf_spec <- rand_forest() %>%
+  set_engine("ranger") %>%
+  set_mode("classification")
+
+rf_wf <- workflow() %>%
+  add_model(rf_spec) %>%
+  add_recipe(application_rec)
+
+rf_rs <- fit_resamples(
+  rf_wf,
+  application_boot,
+  control = control_resamples(save_pred = TRUE)
+)
+
+rf_rs %>%
+  collect_metrics()
+
+```
+
+
+
+```{r}
+rf_rs %>%
+  collect_predictions() %>%
+  conf_mat(DefaultStatus, .pred_class)
+
+```
+
+
+
+```{r}
+rf_spec %>%
+  set_engine("ranger", importance = "permutation") %>%
+  fit(DefaultStatus ~ ., data = juice(prepared_recipe)) %>%
+  vip(geom = "point")
+
+```
+
+
+

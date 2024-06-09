@@ -1,0 +1,27 @@
+{
+    "id": "5BBEB455",
+    "path": "C:/Users/USER/OneDrive/Desktop/data analysis/R/R shiny with R Markdown/hospital/App.R",
+    "project_path": "App.R",
+    "type": "r_source",
+    "hash": "3699731208",
+    "contents": "",
+    "dirty": false,
+    "created": 1689869564422.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "270,36",
+        "scrollLine": "143"
+    },
+    "folds": "131|29|139|2|\n143|33|145|2|\n148|37|200|2|\n202|38|222|2|\n224|35|235|2|\n237|36|248|2|\n308|34|335|2|\n337|34|364|2|\n366|36|393|2|\n396|41|398|2|\n401|38|428|2|\n431|38|457|2|\n460|38|486|2|\n488|40|570|2|\n",
+    "lastKnownWriteTime": 1714484018,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1714495491257,
+    "read_only": false,
+    "read_only_alternatives": []
+}

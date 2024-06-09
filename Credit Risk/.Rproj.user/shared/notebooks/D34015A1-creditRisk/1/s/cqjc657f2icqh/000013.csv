@@ -1,0 +1,4 @@
+"0","application <- application_train %>%"
+"0","  select(-TARGET) %>%"
+"0","  rbind(application_test)"
+"0",""

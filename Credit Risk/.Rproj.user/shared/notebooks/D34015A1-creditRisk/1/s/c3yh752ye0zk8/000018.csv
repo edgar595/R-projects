@@ -1,0 +1,23 @@
+"0","skimr::skim(application)"
+"1","── Data Summary ────────────────────────
+"
+"1","                           Values     
+"
+"1","Name                       application
+"
+"1","Number of rows             356255     
+"
+"1","Number of columns          121        
+"
+"1","_______________________               
+"
+"1","Column type frequency:                
+"
+"1","  character                16         
+"
+"1","  numeric                  105        
+"
+"1","________________________              
+"
+"1","Group variables            None       
+"

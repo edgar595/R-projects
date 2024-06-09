@@ -1,0 +1,27 @@
+{
+    "id": "26615564",
+    "path": "C:/Users/USER/OneDrive/Desktop/data analysis/R/R shiny with R Markdown/house price/App.R",
+    "project_path": "App.R",
+    "type": "r_source",
+    "hash": "2202164470",
+    "contents": "",
+    "dirty": false,
+    "created": 1714577802364.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "30,60",
+        "scrollLine": "0"
+    },
+    "folds": "133|39|138|2|\n140|37|159|2|\n161|37|169|2|\n171|37|181|2|\n183|36|192|2|\n194|37|214|2|\n217|11|241|2|\n",
+    "lastKnownWriteTime": 1715085214,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1715085284866,
+    "read_only": false,
+    "read_only_alternatives": []
+}

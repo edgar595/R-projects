@@ -1,0 +1,6 @@
+"0","word_word_cloud %>%"
+"0","  mutate(class = factor(class)) %>%"
+"0","  ggplot(aes(label = word, color = class, size = n)) +"
+"0","  geom_text_wordcloud_area() +"
+"0","  facet_wrap(~class) +"
+"0","  scale_size_area(max_size = 16)"

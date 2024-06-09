@@ -1,0 +1,8 @@
+"0","library(textrecipes)"
+"0",""
+"0","austin_rec <- recipe(priceRange ~ description, data = train_words) %>%"
+"0","  step_tokenize(description) %>%"
+"0","  step_stopwords(description) %>%"
+"0","  step_tokenfilter(description, max_tokens = 1000) %>%"
+"0","  step_rm(description, pattern = ""\\b[1-5]\\b"") %>%"
+"0","  step_tfidf(description)"

@@ -1,0 +1,3 @@
+"0","# Prepare the recipe"
+"0","prepared_recipe <- prep(application_rec)"
+"0","juice(prepared_recipe)"

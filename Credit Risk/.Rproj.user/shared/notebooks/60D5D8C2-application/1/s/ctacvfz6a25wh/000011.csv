@@ -1,0 +1,8 @@
+"0","# Get the completed dataset for the first imputed set"
+"0","completed_data <- complete(imputed_data, 1)"
+"0",""
+"0","# Update the original dataset with imputed values for the specified columns"
+"0","application_train[missing_cols] <- completed_data[missing_cols]"
+"0",""
+"0",""
+"0",""
